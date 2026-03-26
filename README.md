@@ -1,2 +1,24 @@
-# Cleaner
-A native Python/Tkinter GUI system cleaner for Termux-X11. Easily scan and clear APT packages and hidden system caches to free up storage space with a single click.
+# 🧹 Termux GUI System Cleaner
+A lightweight, native graphical system cleaner built specifically for **Termux-X11**. 
+
+I got tired of typing `pkg clean` and manually deleting hidden `.cache` folders in the terminal, so I built a Python/Tkinter GUI to do it with a single click directly from the XFCE Start Menu.
+
+### ✨ Features
+* **1-Click APT Cleanup:** Instantly scan and wipe leftover `.deb` package downloads.
+* **Deep Cache Sweep:** Clears out the hidden `~/.cache` folder where XFCE and browsers dump gigabytes of junk.
+* **Native Desktop Integration:** Automatically creates a `.desktop` shortcut in your Start Menu/Rofi launcher.
+
+### 🚀 How to Install
+Run this single command in your Termux terminal to automatically download the app, install dependencies, and create the Start Menu shortcut:
+
+```bash
+curl -sL [https://raw.githubusercontent.com/galestrikee/Cleaner/main/install.sh](https://raw.githubusercontent.com/galestrikee/Cleaner/main/install.sh) | bash
+
+
+
+🛠️ Built With
+Python 3
+
+Tkinter (Native Linux GUI)
+
+Bash
