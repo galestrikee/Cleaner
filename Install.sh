@@ -12,12 +12,8 @@ mkdir -p ~/.termux-cleaner
 mkdir -p ~/.local/share/applications
 
 echo "[*] Downloading app files..."
-# REPLACE THE LINK BELOW WITH YOUR RAW PYTHON LINK
-curl -sL https://github.com/galestrikee/Cleaner/blob/main/gui_cleaner.py
--o ~/.termux-cleaner/gui_cleaner.py
-
-# REPLACE THE LINK BELOW WITH YOUR RAW LOGO LINK
-curl -sL https://github.com/galestrikee/Cleaner/blob/main/logo.png -o ~/.termux-cleaner/logo.png
+curl -sL "https://raw.githubusercontent.com/galestrikee/Cleaner/main/gui_cleaner.py" -o ~/.termux-cleaner/gui_cleaner.py
+curl -sL "https://raw.githubusercontent.com/galestrikee/Cleaner/main/logo.png" -o ~/.termux-cleaner/logo.png
 
 echo "[*] Adding shortcut to XFCE Start Menu..."
 cat <<EOF > ~/.local/share/applications/termux-cleaner.desktop
