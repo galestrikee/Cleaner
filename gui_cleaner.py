@@ -1,63 +1,142 @@
-import os
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
+import subprocess
+import os
+import shutil
 
-# --- The Brains (Functions) ---
-def get_folder_size(folder_path):
-    """Scans the folder and returns the size in MB"""
+# --- Core Paths ---
+APT_DIR = "/data/data/com.termux/files/usr/var/cache/apt/archives"
+THUMB_DIR = os.path.expanduser("~/.cache/thumbnails")
+CACHE_DIR = os.path.expanduser("~/.cache")
+
+# --- Helper Math Functions ---
+def get_folder_size(path):
     total_size = 0
-    if os.path.exists(folder_path):
-        for dirpath, _, filenames in os.walk(folder_path):
-            for f in filenames:
-                fp = os.path.join(dirpath, f)
-                if not os.path.islink(fp):
-                    total_size += os.path.getsize(fp)
-    return round(total_size / (1024 * 1024), 2)
+    if not os.path.exists(path): return 0
+    if os.path.isfile(path): return os.path.getsize(path)
+    for dirpath, _, filenames in os.walk(path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if not os.path.islink(fp):
+                try: total_size += os.path.getsize(fp)
+                except: pass
+    return total_size
 
-def clean_apt():
-    apt_dir = "/data/data/com.termux/files/usr/var/cache/apt/archives"
-    mb = get_folder_size(apt_dir)
+def format_mb(size_in_bytes):
+    return f"{size_in_bytes / (1024 * 1024):.2f} MB"
+
+def format_gb(size_in_bytes):
+    return f"{size_in_bytes / (1024**3):.2f} GB"
+
+# --- Main App Logic ---
+def refresh_ui():
+    status_var.set("Status: Scanning system...")
+    root.update() 
     
-    # Pop-up confirmation box
-    if mb > 0:
-        confirm = messagebox.askyesno("Scan Complete", f"Found {mb} MB of package installers.\nDo you want to delete them?")
-        if confirm:
-            os.system("pkg clean")
-            messagebox.showinfo("Success", f"Cleared {mb} MB of storage!")
-    else:
-        messagebox.showinfo("Clean", "Your package vault is already empty!")
-
-def clean_cache():
-    cache_dir = "/data/data/com.termux/files/home/.cache"
-    mb = get_folder_size(cache_dir)
+    # Calculate Cache Sizes
+    apt_size = get_folder_size(APT_DIR)
+    thumb_size = get_folder_size(THUMB_DIR)
+    deep_size = max(0, get_folder_size(CACHE_DIR) - thumb_size) 
     
-    if mb > 0:
-        confirm = messagebox.askyesno("Scan Complete", f"Found {mb} MB of hidden system caches.\nDo you want to delete them?")
-        if confirm:
-            os.system(f"rm -rf {cache_dir}/*")
-            messagebox.showinfo("Success", f"Cleared {mb} MB of storage!")
+    chk_apt.config(text=f"APT Packages ({format_mb(apt_size)})")
+    chk_thumbs.config(text=f"Image Thumbnails ({format_mb(thumb_size)})")
+    chk_deep.config(text=f"Deep App Caches ({format_mb(deep_size)})")
+    
+    # Calculate Device Storage (Scanning the Termux home directory partition)
+    total, used, free = shutil.disk_usage(os.path.expanduser("~"))
+    storage_lbl.config(text=f"Storage: {format_gb(used)} Used  |  {format_gb(free)} Free")
+    
+    status_var.set("Status: Ready to clean")
+
+def clean_selected():
+    cleaned = False
+    status_var.set("Status: Cleaning in progress...")
+    root.update()
+    
+    if var_apt.get():
+        try:
+            subprocess.run(["pkg", "clean"], check=True)
+            cleaned = True
+        except: pass
+            
+    if var_thumbs.get() and os.path.exists(THUMB_DIR):
+        try:
+            shutil.rmtree(THUMB_DIR)
+            cleaned = True
+        except: pass
+
+    if var_deep.get() and os.path.exists(CACHE_DIR):
+        for item in os.listdir(CACHE_DIR):
+            if item == "thumbnails" and not var_thumbs.get(): continue
+            item_path = os.path.join(CACHE_DIR, item)
+            try:
+                if os.path.isfile(item_path): os.remove(item_path)
+                elif os.path.isdir(item_path): shutil.rmtree(item_path)
+            except: pass
+        cleaned = True
+
+    refresh_ui()
+    if cleaned:
+        messagebox.showinfo("Success", "Selected junk files have been vaporized!")
     else:
-        messagebox.showinfo("Clean", "Your system cache is already empty!")
+        messagebox.showinfo("Info", "Nothing was selected or nothing to clean.")
 
+# --- Dark Mode GUI Setup ---
+root = tk.Tk()
+root.title("cleanit_v1.2.1")
+root.geometry("420x360") # Made taller for the storage bar
 
-# --- The Face (GUI Window Design) ---
-app = tk.Tk()
-app.title("Termux Cleaner")
-app.geometry("320x250") # Sets the window size
+# Customizing the Theme
+BG_COLOR = "#1e1e2e"
+FG_COLOR = "#cdd6f4"
+ACCENT_COLOR = "#f38ba8"
 
-# Title Label
-title_label = tk.Label(app, text="System Cleaner", font=("Arial", 16, "bold"))
-title_label.pack(pady=20) # 'pack' places it on the screen, pady adds spacing
+root.configure(bg=BG_COLOR)
 
-# Buttons
-btn_apt = tk.Button(app, text="Scan & Clean PKG Cache", command=clean_apt, width=25, height=2)
-btn_apt.pack(pady=5)
+style = ttk.Style()
+style.theme_use('clam') 
 
-btn_cache = tk.Button(app, text="Scan & Clean Deep Cache", command=clean_cache, width=25, height=2)
-btn_cache.pack(pady=5)
+style.configure('.', background=BG_COLOR, foreground=FG_COLOR, font=("Arial", 10))
+style.configure('TCheckbutton', background=BG_COLOR, foreground=FG_COLOR, focuscolor=BG_COLOR)
+style.map('TCheckbutton', background=[('active', BG_COLOR)]) 
 
-btn_exit = tk.Button(app, text="Exit App", command=app.quit, width=15)
-btn_exit.pack(pady=15)
+# Main Container
+frame = tk.Frame(root, bg=BG_COLOR, padx=20, pady=15)
+frame.pack(expand=True, fill="both")
 
-# This tells the app to stay open and wait for you to click something
-app.mainloop()
+# --- NEW: Storage Info Bar ---
+storage_lbl = tk.Label(frame, text="Calculating Storage...", font=("Arial", 11, "bold"), bg="#181825", fg="#a6e3a1", pady=8)
+storage_lbl.pack(fill="x", pady=(0, 15))
+
+# UI Elements
+tk.Label(frame, text="Select areas to clean:", font=("Arial", 12, "bold"), bg=BG_COLOR, fg=FG_COLOR).pack(anchor="w", pady=(0, 10))
+
+var_apt = tk.BooleanVar(value=True)
+var_thumbs = tk.BooleanVar(value=True)
+var_deep = tk.BooleanVar(value=False)
+
+chk_apt = ttk.Checkbutton(frame, text="Calculating...", variable=var_apt)
+chk_apt.pack(anchor="w", pady=4)
+
+chk_thumbs = ttk.Checkbutton(frame, text="Calculating...", variable=var_thumbs)
+chk_thumbs.pack(anchor="w", pady=4)
+
+chk_deep = ttk.Checkbutton(frame, text="Calculating...", variable=var_deep)
+chk_deep.pack(anchor="w", pady=4)
+
+# Warning Text
+tk.Label(frame, text="* Deep cache may sign you out of websites.", fg=ACCENT_COLOR, bg=BG_COLOR, font=("Arial", 9, "italic")).pack(anchor="w", pady=(10, 20))
+
+# Clean Button
+btn = tk.Button(frame, text="Clean Selected", command=clean_selected, bg=ACCENT_COLOR, fg="#11111b", font=("Arial", 11, "bold"), width=15, pady=6, borderwidth=0, cursor="hand2")
+btn.pack()
+
+# Status Bar
+status_var = tk.StringVar()
+status_var.set("Status: Initializing...")
+status_bar = tk.Label(root, textvariable=status_var, bd=1, relief="sunken", anchor="w", bg="#181825", fg="#a6adc8", font=("Arial", 9), padx=10, pady=5)
+status_bar.pack(side="bottom", fill="x")
+
+refresh_ui()
+
+root.mainloop()
