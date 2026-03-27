@@ -10,8 +10,12 @@ I got tired of typing `pkg clean` and manually deleting hidden `.cache` folders 
 
 ### 🚀 How to Install
 Run this single command in your Termux terminal to automatically download the app, install dependencies, and create the Start Menu shortcut:
+
+
 curl -sL https://raw.githubusercontent.com/galestrikee/Cleaner/main/Install.sh | bash
 
 ### TO UNINSTALL TYPE THIS IN TERMINAL 
+
+
 
 curl -sL https://raw.githubusercontent.com/galestrikee/Cleaner/main/Uninstall.sh | bash
