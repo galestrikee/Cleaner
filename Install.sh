@@ -9,7 +9,7 @@ pkg update -y
 
 echo "[*] Installing Native GTK4 dependencies..."
 # This replaces python-tkinter with the heavy-duty Linux UI packages
-pkg install python python-gobject gtk4 libadwaita -y
+pkg install python gtk4 libadwaita -y
 
 echo "[*] Setting up app directories..."
 mkdir -p ~/.termux-cleaner
