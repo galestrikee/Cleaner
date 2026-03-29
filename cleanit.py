@@ -1,5 +1,7 @@
 import gi
 import os
+os.environ["GSK_RENDERER"] = "cairo"  # Forces fast 2D software rendering
+os.environ["GDK_BACKEND"] = "x11"     # Stops it from searching for Wayland
 import sys
 import shutil
 import subprocess
